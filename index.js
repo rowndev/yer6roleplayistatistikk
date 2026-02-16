@@ -1,3 +1,4 @@
+console.log("TOKEN LENGTH:", process.env.TOKEN?.length);
 require("dotenv").config();
 const fs = require("fs");
 const {
@@ -65,12 +66,12 @@ async function createEmbed(players, info, ping, online) {
     .setColor(color)
 
     // BAŞLIK
-    .setTitle("YERALTI ROLEPLAY")
-    .setURL("https://www.yeraltirp.com")
+    .setTitle("KADİM ROLEPLAY")
+    .setURL("https://www.kedimrp.com")
 
     // SOL ÜST LOGO
     .setAuthor({
-      name: "YERALTI ROLEPLAY",
+      name: "KADİM ROLEPLAY",
       iconURL: process.env.SERVER_LOGO
     })
 
@@ -120,7 +121,7 @@ async function createEmbed(players, info, ping, online) {
 
     // FOOTER
     .setFooter({
-      text: "www.yeraltirp.com • Sunucu AKTİF!    BOT YAPIMCIM;  ROWN DEV ",
+      text: "www.kadimrp.com • Sunucu AKTİF!    BOT YAPIMCIM;  ROWN DEV ",
       iconURL: process.env.FOOTER_ICON
     })
 
@@ -174,6 +175,12 @@ async function registerCommands() {
 // ---------- EVENTLER ----------
 client.once("ready", async () => {
   console.log("✅ PRO PANEL BOT AKTİF");
+    client.user.setPresence({
+    activities: [
+      { name: "KADİM ROLEPLAY", type: 0 } // PLAYING
+    ],
+    status: "online"
+  });
   await registerCommands();
   await updatePanel();
   setInterval(updatePanel, UPDATE_INTERVAL);
@@ -187,11 +194,16 @@ client.on("interactionCreate", async (interaction) => {
       return interaction.reply({ content: "❌ Yetkin yok", ephemeral: true });
     }
 
-    await updatePanel(true);
-    return interaction.reply({
-      content: "✅ Panel kuruldu / yenilendi",
-      ephemeral: true
-    });
+    // ⏳ Discord'a "bekle" sinyali
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      await updatePanel(true);
+      await interaction.editReply("✅ Panel kuruldu / yenilendi");
+    } catch (err) {
+      console.error(err);
+      await interaction.editReply("❌ Panel kurulurken hata oluştu");
+    }
   }
 });
 
