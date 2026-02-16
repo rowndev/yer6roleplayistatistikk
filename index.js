@@ -1,3 +1,5 @@
+const { setTimeout: sleep } = require("timers/promises");
+const AbortController = global.AbortController || require("abort-controller");
 console.log("TOKEN LENGTH:", process.env.TOKEN?.length);
 require("dotenv").config();
 const fs = require("fs");
@@ -23,22 +25,26 @@ const UPDATE_INTERVAL = 5 * 60 * 1000;
 const panelFile = "./panel.json";
 
 // ---------- PANEL.JSON ----------
-function getPanelData() {
-  if (!fs.existsSync(panelFile)) return { messageId: null };
-  return JSON.parse(fs.readFileSync(panelFile));
+async function safeFetch(url, timeout = 4000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(id);
+    return res;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
+  }
 }
 
-function savePanelData(data) {
-  fs.writeFileSync(panelFile, JSON.stringify(data, null, 2));
-}
-
-// ---------- FIVEM VERİ (GÜVENLİ) ----------
 async function getServerData() {
   try {
     const start = Date.now();
 
-    const playersRes = await fetch(`http://${process.env.FIVEM_IP}/players.json`);
-    const infoRes = await fetch(`http://${process.env.FIVEM_IP}/info.json`);
+    const playersRes = await safeFetch(`http://${process.env.FIVEM_IP}/players.json`, 4000);
+    const infoRes = await safeFetch(`http://${process.env.FIVEM_IP}/info.json`, 4000);
 
     const ping = Date.now() - start;
 
@@ -208,3 +214,4 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.login(process.env.TOKEN);
+
